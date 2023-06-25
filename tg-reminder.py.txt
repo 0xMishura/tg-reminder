@@ -1,0 +1,40 @@
+import datetime
+from telegram.ext import Updater, CommandHandler, Job
+
+# Задайте токен вашего бота
+TOKEN = 'YOUR_BOT_TOKEN'
+
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Привет! Я бот-напоминалка о задачах. Используйте /set для установки напоминания.')
+
+def set_reminder(update, context):
+    chat_id = update.effective_chat.id
+    job = context.job_queue
+    # Задайте время и текст напоминания
+    reminder_time = datetime.datetime.now() + datetime.timedelta(minutes=10)
+    reminder_text = "У вас есть задача, не забудьте выполнить ее!"
+
+    job.run_once(send_reminder, reminder_time, context=chat_id, text=reminder_text)
+    context.bot.send_message(chat_id=chat_id, text='Напоминание установлено!')
+
+def send_reminder(context):
+    job = context.job
+    chat_id = job.context
+    reminder_text = job.kwargs['text']
+    context.bot.send_message(chat_id=chat_id, text=reminder_text)
+
+def main():
+    updater = Updater(token=TOKEN, use_context=True)
+    dispatcher = updater.dispatcher
+
+    start_handler = CommandHandler('start', start)
+    set_reminder_handler = CommandHandler('set', set_reminder)
+
+    dispatcher.add_handler(start_handler)
+    dispatcher.add_handler(set_reminder_handler)
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
